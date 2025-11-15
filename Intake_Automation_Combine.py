@@ -282,7 +282,9 @@ def show_opt_svc_app():
     # Load workbook and get worksheet names
     spreadsheet = client.open_by_key(st.secrets["master_sheet_id"])
 
-    all_sheets = [ws.title for ws in st.secrets["master_sheet_name"]]
+    spreadsheet_list=st.secrets["master_sheet_name"]
+
+    all_sheets = [ws.title for ws in spreadsheet_list]
 
     # Multi-select: user can pick 1–3 sheets
     selected_sheets = st.multiselect(
