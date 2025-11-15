@@ -282,42 +282,40 @@ def show_opt_svc_app():
     # Load workbook and get worksheet names
     spreadsheet = client.open_by_key(st.secrets["master_sheet_id"])
 
-    spreadsheet_list=st.secrets["master_sheet_name"]
-    list_1=pd.DataFrame(spreadsheet)
+    # Load allowed sheet list from secrets
+    allowed_sheets = st.secrets["master_sheet_choices"]
 
-    all_sheets = [ws for ws in list_1]
-
-    # Multi-select: user can pick 1–3 sheets
+    # Multi-select: user can pick up to 3 specific sheets
     selected_sheets = st.multiselect(
         "Select up to 3 sheets to load:",
-        options=all_sheets,
-        default=[st.secrets["master_sheet_name"]],
+        options=allowed_sheets,
+        default=[allowed_sheets[0]],
         max_selections=3
     )
 
     if len(selected_sheets) == 0:
         st.warning("Please select at least one sheet.")
         st.stop()
-    
-    # Read each selected sheet and combine data
+
+    # Combine selected sheets into a single DataFrame
     df_list = []
-    row_offset_tracker = {}   # Track first data row for each sheet
 
     for sheet_name in selected_sheets:
         ws = spreadsheet.worksheet(sheet_name)
 
-        # Detect header automatically (your sheets start at row 3, so header=2)
+        # Load with header at row 3 (header=2)
         df_temp = get_as_dataframe(ws, evaluate_formulas=True, header=2).fillna('')
-        
-        # Calculate row offset for RowNumber construction
-        # Example: header is on row 3 → first data row = 4
-        row_offset = 3 + 1  # 3 header rows, 1 to convert to 1-based
+
+        # RowNumber = actual row index inside the sheet
+        row_offset = 3 + 1  # header rows
         df_temp["RowNumber"] = df_temp.index + row_offset
-        
-        df_temp["SourceSheet"] = sheet_name  # optional: track sheet origin
+
+        # Track which sheet record came from
+        df_temp["SourceSheet"] = sheet_name
+
         df_list.append(df_temp)
 
-    # Merge all selected sheets
+    # Merge into one DataFrame
     df = pd.concat(df_list, ignore_index=True)
     
     
