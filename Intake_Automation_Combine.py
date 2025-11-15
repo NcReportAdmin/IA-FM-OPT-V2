@@ -285,7 +285,7 @@ def show_opt_svc_app():
     spreadsheet_list=st.secrets["master_sheet_name"]
     list_1=pd.DataFrame(spreadsheet)
 
-    all_sheets = [ws.title for ws in list_1]
+    all_sheets = [ws for ws in list_1]
 
     # Multi-select: user can pick 1–3 sheets
     selected_sheets = st.multiselect(
