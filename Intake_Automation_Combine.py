@@ -285,17 +285,25 @@ def show_opt_svc_app():
     # Load allowed sheet list from secrets
     allowed_sheets = st.secrets["master_sheet_choices"]
 
-    # Multi-select: user can pick up to 3 specific sheets
-    selected_sheets = st.multiselect(
+    # Create short-label mapping
+    label_map = {name: name.replace("Form Responses-", "") for name in allowed_sheets}
+    reverse_map = {v: k for k, v in label_map.items()}
+
+    # Multiselect using shortened labels
+    selected_labels = st.multiselect(
         "Select up to 3 sheets to load:",
-        options=allowed_sheets,
-        default=[allowed_sheets[0]],
+        options=list(reverse_map.keys()),          # ["2026", "2025", "2024"]
+        default=[label_map[allowed_sheets[0]]],     # e.g. "2026"
         max_selections=3
     )
 
-    if len(selected_sheets) == 0:
+    if len(selected_labels) == 0:
         st.warning("Please select at least one sheet.")
         st.stop()
+
+    # Convert selected labels back to full sheet names
+    selected_sheets = [reverse_map[label] for label in selected_labels]
+
 
     # Combine selected sheets into a single DataFrame
     df_list = []
