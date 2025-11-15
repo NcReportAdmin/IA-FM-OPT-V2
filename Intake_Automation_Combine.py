@@ -307,8 +307,8 @@ def show_opt_svc_app():
         df_temp = get_as_dataframe(ws, evaluate_formulas=True, header=2).fillna('')
 
         # RowNumber = actual row index inside the sheet
-        row_offset = 3 + 1  # header rows
-        df_temp["RowNumber"] = df_temp.index + row_offset
+        first_data_row = 4  # row 4 = first data row
+        df_temp["RowNumber"] = df_temp.index + first_data_row
 
         # Track which sheet record came from
         df_temp["SourceSheet"] = sheet_name
@@ -423,13 +423,15 @@ def show_opt_svc_app():
             with col2:
                 if st.button("💾 Submit Update"):
                     try:
+                        ws = spreadsheet.worksheet(record["SourceSheet"])   # use correct sheet
+
                         # Update Google Sheet with edited fields
-                        if vcl_issued: sheet.update(f"AI{row_number}", [[vcl_issued.strftime("%m/%d/%y")]])
-                        if vcl_start: sheet.update(f"AJ{row_number}", [[vcl_start.strftime("%m/%d/%y")]])
-                        if vcl_end: sheet.update(f"AK{row_number}", [[vcl_end.strftime("%m/%d/%y")]])
-                        #if opt_ltr_status: sheet.update(f"AM{row_number}", [[opt_ltr_status]])
-                        if vel_issued: sheet.update(f"AL{row_number}", [[vel_issued.strftime("%m/%d/%y")]])
-                        if final_status: sheet.update(f"AN{row_number}", [[final_status]])
+                        if vcl_issued: ws.update(f"AI{row_number}", [[vcl_issued.strftime("%m/%d/%y")]])
+                        if vcl_start: ws.update(f"AJ{row_number}", [[vcl_start.strftime("%m/%d/%y")]])
+                        if vcl_end: ws.update(f"AK{row_number}", [[vcl_end.strftime("%m/%d/%y")]])
+                        #if opt_ltr_status: ws.update(f"AM{row_number}", [[opt_ltr_status]])
+                        if vel_issued: ws.update(f"AL{row_number}", [[vel_issued.strftime("%m/%d/%y")]])
+                        if final_status: ws.update(f"AN{row_number}", [[final_status]])
 
                         st.success("✅ Changes saved successfully. Moving to next record...")
                         st.session_state.record_pos += 1
