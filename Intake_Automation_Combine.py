@@ -12,19 +12,69 @@ st.set_page_config(page_title="Intake App", layout="centered")
 
 # ----------------- GOOGLE SHEETS AUTH -----------------
 # Connect to Google Sheets using Service Account credentials
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("nc-ia-automation-1745dc341430.json", scope)
-client = gspread.authorize(creds)
+def get_google_sheets_client():
+    """
+    Initialize Google Sheets client using service account credentials
+    """
+    try:
+        # Get credentials from Streamlit secrets
+        credentials_dict = st.secrets["google_service_account"]
+        
+        # Define the scope
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        # Create credentials
+        credentials = Credentials.from_service_account_info(
+            credentials_dict, 
+            scopes=scope
+        )
+        
+        # Initialize the client
+        client = gspread.authorize(credentials)
+        return client
+    
+    except Exception as e:
+        st.error(f"Authentication failed: {str(e)}")
+        st.error("Please check your Google service account configuration.")
+        return None
 
 # ----------------- HELPER FUNCTIONS -----------------
 @st.cache_data
 def load_permissions():
     """Load permissions from Google Sheet and return as DataFrame."""
-    sheet = client.open_by_key("1pTHjR8V1VLxgZKGU-4Ym9_MvkB63OGblstzskE9jrwM").sheet1
-    data = sheet.get_all_records()
-    return pd.DataFrame(data)
-
-#permissions sheet location : https://docs.google.com/spreadsheets/d/1pTHjR8V1VLxgZKGU-4Ym9_MvkB63OGblstzskE9jrwM
+    try:
+        client = get_google_sheets_client()
+        if client is None:
+            return pd.DataFrame()
+        
+        # Get the Google Sheet ID from secrets
+        sheet_id = st.secrets["permissions_sheet_id"]
+        
+        # Open the sheet
+        sheet = client.open_by_key(sheet_id)
+        
+        # Get the first worksheet (or specify by name)
+        worksheet = sheet.get_worksheet(0)  # First sheet
+        # Or use: worksheet = sheet.worksheet("Sheet1")  # By name
+        
+        # Get all records
+        records = worksheet.get_all_records()
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(records)
+        
+        # Ensure email column is lowercase for consistency
+        if 'email' in df.columns:
+            df['email'] = df['email'].str.lower().str.strip()
+        
+        return df
+    
+    except Exception as e:
+        st.error(f"Failed to load permissions from Google Sheets: {str(e)}")
+        return pd.DataFrame()
 
 def safe_date(value):
     """Convert value to datetime.date if valid, else return None."""
@@ -81,14 +131,11 @@ def show_pending_triage_app():
         st.markdown("---")
 
         # ---------------- Load Google Sheet Data ----------------
-        SHEET_ID = "1HmlKs_uiTrgIy5IHdQYzMXRR7E-88S9HyG85QQa-qLo"
-        SHEET_NAME = "Pending Triage"
+        SHEET_ID = st.secrets["pending_triage_sheet_id"]
+        SHEET_NAME = st.secrets["pending_triage_sheet_name"]
         sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
         df = get_as_dataframe(sheet, evaluate_formulas=True).fillna('')
         df['RowNumber'] = df.index + 2  # Adjust for header row in sheet
-
-        #Test Google Sheet       : https://docs.google.com/spreadsheets/d/1Az-mjNTMGACi4EPgAwfbir3AJkFl6-EWsP0g0OMdX7I
-        #Prodcution google Sheet : https://docs.google.com/spreadsheets/d/1HmlKs_uiTrgIy5IHdQYzMXRR7E-88S9HyG85QQa-qLo
 
         # ---------------- Filters ----------------
         name_email_filter = st.text_input("Search by Email or Name").strip().lower()
@@ -238,14 +285,12 @@ def show_opt_svc_app():
         st.markdown("---")
 
         # Load OPT SVC sheet data
-        SHEET_ID = "1wY9N1GlQ_-elkH2kdufOE1jWE6-_bVZNaCvlDuKziBk"
-        SHEET_NAME = "Form Responses-2025"
+        SHEET_ID = st.secrets["master_sheet_id"]
+        SHEET_NAME = st.secrets["master_sheet_name"]
+        
         sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
         df = get_as_dataframe(sheet, evaluate_formulas=True, header=2).fillna('')
         df['RowNumber'] = df.index + 4  # first data row is 4 in the Sheet
-
-        #Test Google Sheet       : https://docs.google.com/spreadsheets/d/1mqSramm8OgbdEXDET-kSre1q10ruTpH2DFRlvc4UeWw
-        #Prodcution google Sheet : https://docs.google.com/spreadsheets/d/1wY9N1GlQ_-elkH2kdufOE1jWE6-_bVZNaCvlDuKziBk
 
         # ---------------- Filters ----------------
         name_email_filter = st.text_input("Search by Email Address or Name").strip().lower()
@@ -392,4 +437,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
