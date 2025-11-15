@@ -410,6 +410,9 @@ def show_opt_svc_app():
 
 # ----------------- MAIN APP -----------------
 def main():
+
+    client = get_google_sheets_client()
+    
     """Main app flow: login and app selection."""
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
