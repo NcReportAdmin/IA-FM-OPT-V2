@@ -283,8 +283,9 @@ def show_opt_svc_app():
     spreadsheet = client.open_by_key(st.secrets["master_sheet_id"])
 
     spreadsheet_list=st.secrets["master_sheet_name"]
+    list_1=pd.DataFrame(spreadsheet)
 
-    all_sheets = [ws.title for ws in spreadsheet_list]
+    all_sheets = [ws.title for ws in list_1]
 
     # Multi-select: user can pick 1–3 sheets
     selected_sheets = st.multiselect(
