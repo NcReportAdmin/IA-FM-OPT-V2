@@ -282,7 +282,7 @@ def show_opt_svc_app():
     # Load workbook and get worksheet names
     spreadsheet = client.open_by_key(st.secrets["master_sheet_id"])
 
-    all_sheets = [ws.title for ws in spreadsheet.worksheets()]
+    all_sheets = [ws.title for ws in st.secrets["master_sheet_name"]]
 
     # Multi-select: user can pick 1–3 sheets
     selected_sheets = st.multiselect(
@@ -296,14 +296,30 @@ def show_opt_svc_app():
         st.warning("Please select at least one sheet.")
         st.stop()
     
+    # Read each selected sheet and combine data
+    df_list = []
+    row_offset_tracker = {}   # Track first data row for each sheet
+
+    for sheet_name in selected_sheets:
+        ws = spreadsheet.worksheet(sheet_name)
+
+        # Detect header automatically (your sheets start at row 3, so header=2)
+        df_temp = get_as_dataframe(ws, evaluate_formulas=True, header=2).fillna('')
+        
+        # Calculate row offset for RowNumber construction
+        # Example: header is on row 3 → first data row = 4
+        row_offset = 3 + 1  # 3 header rows, 1 to convert to 1-based
+        df_temp["RowNumber"] = df_temp.index + row_offset
+        
+        df_temp["SourceSheet"] = sheet_name  # optional: track sheet origin
+        df_list.append(df_temp)
+
+    # Merge all selected sheets
+    df = pd.concat(df_list, ignore_index=True)
+    
     
     #user_email = st.session_state['user_email']
     user_role = st.session_state['user_role']
-    
-    # #Timezone San Francisco time (PT)
-    # pacific = pytz.timezone("America/Los_Angeles")
-    # st.session_state['today_date'] = datetime.now(pacific)
-    # today_date = st.session_state['today_date']
 
     if user_role in ["HRS", "Admin","Editor","Viewer","FM"]:
 
@@ -311,12 +327,12 @@ def show_opt_svc_app():
         st.markdown("---")
 
         # Load OPT SVC sheet data
-        SHEET_ID = st.secrets["master_sheet_id"]
-        SHEET_NAME = st.secrets["master_sheet_name"]
+        #SHEET_ID = st.secrets["master_sheet_id"]
+        #SHEET_NAME = st.secrets["master_sheet_name"]
         
-        sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
-        df = get_as_dataframe(sheet, evaluate_formulas=True, header=2).fillna('')
-        df['RowNumber'] = df.index + 4  # first data row is 4 in the Sheet
+        #sheet = client.open_by_key(SHEET_ID).worksheet(SHEET_NAME)
+        #df = get_as_dataframe(sheet, evaluate_formulas=True, header=2).fillna('')
+        #df['RowNumber'] = df.index + 4  # first data row is 4 in the Sheet
 
         # ---------------- Filters ----------------
         name_email_filter = st.text_input("Search by Email Address or Name").strip().lower()
