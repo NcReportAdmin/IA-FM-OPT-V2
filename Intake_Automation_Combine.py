@@ -6,6 +6,7 @@ from gspread_dataframe import get_as_dataframe
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 import time
+from google.oauth2.service_account import Credentials
 
 # ----------------- PAGE CONFIG -----------------
 st.set_page_config(page_title="Intake App", layout="centered")
@@ -437,5 +438,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
