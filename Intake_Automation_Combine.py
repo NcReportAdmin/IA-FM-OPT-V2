@@ -278,6 +278,24 @@ def show_opt_svc_app():
     client = get_google_sheets_client()
     if client is None:
         st.stop()
+
+    # Load workbook and get worksheet names
+    spreadsheet = client.open_by_key(st.secrets["master_sheet_id"])
+
+    all_sheets = [ws.title for ws in spreadsheet.worksheets()]
+
+    # Multi-select: user can pick 1–3 sheets
+    selected_sheets = st.multiselect(
+        "Select up to 3 sheets to load:",
+        options=all_sheets,
+        default=[st.secrets["master_sheet_name"]],
+        max_selections=3
+    )
+
+    if len(selected_sheets) == 0:
+        st.warning("Please select at least one sheet.")
+        st.stop()
+    
     
     #user_email = st.session_state['user_email']
     user_role = st.session_state['user_role']
