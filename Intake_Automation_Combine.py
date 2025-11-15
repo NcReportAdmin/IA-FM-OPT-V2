@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import date,datetime
 import gspread
 from gspread_dataframe import get_as_dataframe
-from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 import time
 from google.oauth2.service_account import Credentials
@@ -43,7 +42,7 @@ def get_google_sheets_client():
         return None
 
 # ----------------- HELPER FUNCTIONS -----------------
-@st.cache_data
+@st.cache_data(ttl=30)  # refresh every 30s
 def load_permissions():
     """Load permissions from Google Sheet and return as DataFrame."""
     try:
@@ -116,6 +115,9 @@ def login():
 def show_pending_triage_app():
     """Displays Pending Triage form, allows filtering, viewing, and editing records."""
 
+    client = get_google_sheets_client()
+    if client is None:
+        st.stop()
     # ---------------- Session Info ----------------
     user_email = st.session_state['user_email']
     user_role = st.session_state['user_role']
@@ -272,6 +274,11 @@ def show_pending_triage_app():
 # ----------------- APP 2: OPT SVC -----------------
 def show_opt_svc_app():
     """Displays OPT SVC form with record summary and editable fields side by side."""
+
+    client = get_google_sheets_client()
+    if client is None:
+        st.stop()
+    
     #user_email = st.session_state['user_email']
     user_role = st.session_state['user_role']
     
@@ -411,8 +418,6 @@ def show_opt_svc_app():
 # ----------------- MAIN APP -----------------
 def main():
 
-    client = get_google_sheets_client()
-    
     """Main app flow: login and app selection."""
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
